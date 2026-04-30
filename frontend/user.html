@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบจัดการข้อมูลนักเรียน - User</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            padding: 12px 20px;
+            margin-bottom: 25px;
+        }
+
+        .topbar-info {
+            color: white;
+            font-size: 0.95em;
+        }
+
+        .topbar-info span {
+            font-weight: 700;
+        }
+
+        .role-badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.25);
+            color: white;
+            border-radius: 20px;
+            padding: 3px 12px;
+            font-size: 0.8em;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+
+        .btn-logout {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 2px solid rgba(255,255,255,0.5);
+            border-radius: 8px;
+            padding: 8px 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-logout:hover {
+            background: rgba(255,255,255,0.35);
+        }
+
+        .readonly-notice {
+            background: #fff3cd;
+            border-left: 4px solid #f0ad4e;
+            border-radius: 0 8px 8px 0;
+            padding: 12px 18px;
+            margin-bottom: 20px;
+            color: #856404;
+            font-size: 0.9em;
+        }
+
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .stat-number {
+            font-size: 2em;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .stat-label {
+            color: #888;
+            font-size: 0.85em;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="topbar">
+            <div class="topbar-info">
+                สวัสดี, <span id="displayName">-</span>
+                <span class="role-badge">👤 User</span>
+            </div>
+            <button class="btn-logout" onclick="logout()">ออกจากระบบ</button>
+        </div>
+
+        <h1>🎓 ระบบจัดการข้อมูลนักเรียน</h1>
+
+        <!-- สถิติ -->
+        <div class="stats-row" id="statsRow">
+            <div class="stat-card">
+                <div class="stat-number" id="totalCount">-</div>
+                <div class="stat-label">นักเรียนทั้งหมด</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="avgGpa">-</div>
+                <div class="stat-label">GPA เฉลี่ย</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="majorCount">-</div>
+                <div class="stat-label">สาขาที่เปิดสอน</div>
+            </div>
+        </div>
+
+        <!-- ตารางแสดงข้อมูล -->
+        <div class="table-section">
+            <div class="table-header">
+                <h2>รายชื่อนักเรียน</h2>
+                <div class="search-box">
+                    <select id="majorFilter">
+                        <option value="">ทุกสาขา</option>
+                        <option value="Computer Science">Computer Science</option>
+                        <option value="Engineering">Engineering</option>
+                        <option value="Business">Business</option>
+                        <option value="Arts">Arts</option>
+                        <option value="Science">Science</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="readonly-notice">
+                🔒 โหมดดูข้อมูล — บัญชี User ไม่สามารถเพิ่ม แก้ไข หรือลบข้อมูลได้
+            </div>
+
+            <table id="studentsTable">
+                <thead>
+                    <tr>
+                        <th>รหัสนักเรียน</th>
+                        <th>ชื่อ-นามสกุล</th>
+                        <th>อีเมล</th>
+                        <th>อายุ</th>
+                        <th>สาขา</th>
+                        <th>GPA</th>
+                        <th>สถานะ</th>
+                    </tr>
+                </thead>
+                <tbody id="studentsTableBody">
+                    <tr><td colspan="7" style="text-align:center;padding:30px;color:#aaa;">กำลังโหลดข้อมูล...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3000/api/students';
+
+        // ตรวจสอบสิทธิ์
+        (function checkAuth() {
+            const role = sessionStorage.getItem('role');
+            if (!role) { window.location.href = 'login.html'; return; }
+            if (role === 'admin') { window.location.href = 'index.html'; return; }
+            document.getElementById('displayName').textContent = sessionStorage.getItem('username') || 'User';
+        })();
+
+        function logout() {
+            sessionStorage.clear();
+            window.location.href = 'login.html';
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadStudents();
+            document.getElementById('majorFilter').addEventListener('change', handleFilter);
+        });
+
+        async function loadStudents() {
+            try {
+                const response = await fetch(API_URL);
+                const students = await response.json();
+                displayStudents(students);
+                updateStats(students);
+            } catch (error) {
+                document.getElementById('studentsTableBody').innerHTML =
+                    '<tr><td colspan="7" style="text-align:center;color:#e74c3c;padding:30px;">เกิดข้อผิดพลาดในการโหลดข้อมูล</td></tr>';
+            }
+        }
+
+        function displayStudents(students) {
+            const tbody = document.getElementById('studentsTableBody');
+            tbody.innerHTML = '';
+
+            if (students.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:30px;color:#aaa;">ไม่มีข้อมูล</td></tr>';
+                return;
+            }
+
+            students.forEach(student => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${student.studentId}</td>
+                    <td>${student.firstName} ${student.lastName}</td>
+                    <td>${student.email}</td>
+                    <td>${student.age}</td>
+                    <td>${student.major}</td>
+                    <td>${student.gpa.toFixed(2)}</td>
+                    <td>
+                        <span style="
+                            display:inline-block;
+                            padding:3px 10px;
+                            border-radius:12px;
+                            font-size:0.82em;
+                            font-weight:600;
+                            background:${student.isActive ? '#d4edda' : '#f8d7da'};
+                            color:${student.isActive ? '#155724' : '#721c24'}
+                        ">
+                            ${student.isActive ? 'กำลังศึกษา' : 'พ้นสภาพ'}
+                        </span>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function updateStats(students) {
+            document.getElementById('totalCount').textContent = students.length;
+            if (students.length > 0) {
+                const avg = students.reduce((s, st) => s + st.gpa, 0) / students.length;
+                document.getElementById('avgGpa').textContent = avg.toFixed(2);
+            } else {
+                document.getElementById('avgGpa').textContent = '-';
+            }
+            const majors = new Set(students.map(s => s.major));
+            document.getElementById('majorCount').textContent = majors.size;
+        }
+
+        async function handleFilter(e) {
+            const major = e.target.value;
+            try {
+                const url = major ? `${API_URL}/search/major/${major}` : API_URL;
+                const response = await fetch(url);
+                const students = await response.json();
+                displayStudents(students);
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+    </script>
+</body>
+</html>

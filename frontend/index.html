@@ -3,24 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Management System</title>
+    <title>Student Management System - Admin</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            padding: 12px 20px;
+            margin-bottom: 25px;
+        }
+
+        .topbar-info {
+            color: white;
+            font-size: 0.95em;
+        }
+
+        .topbar-info span {
+            font-weight: 700;
+        }
+
+        .role-badge {
+            display: inline-block;
+            background: rgba(255,255,255,0.25);
+            color: white;
+            border-radius: 20px;
+            padding: 3px 12px;
+            font-size: 0.8em;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+
+        .btn-logout {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 2px solid rgba(255,255,255,0.5);
+            border-radius: 8px;
+            padding: 8px 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-logout:hover {
+            background: rgba(255,255,255,0.35);
+        }
+
+        .btn-edit:hover {
+            background: #218838;
+            transform: translateY(-1px);
+        }
+
+        .btn-delete:hover {
+            background: #c82333;
+            transform: translateY(-1px);
+        }
+    </style>
 </head>
 <body>
     <div class="container">
+        <div class="topbar">
+            <div class="topbar-info">
+                สวัสดี, <span id="displayName">-</span>
+                <span class="role-badge">🔑 Admin</span>
+            </div>
+            <button class="btn-logout" onclick="logout()">ออกจากระบบ</button>
+        </div>
+
         <h1>🎓 ระบบจัดการข้อมูลนักเรียน</h1>
-        
+
         <!-- ฟอร์มเพิ่ม/แก้ไขนักเรียน -->
         <div class="form-section">
             <h2>เพิ่ม/แก้ไขข้อมูลนักเรียน</h2>
             <form id="studentForm">
                 <input type="hidden" id="studentIdHidden">
-                
+
                 <div class="form-group">
                     <label>รหัสนักเรียน:</label>
                     <input type="text" id="studentId" required>
                 </div>
-                
+
                 <div class="form-row">
                     <div class="form-group">
                         <label>ชื่อ:</label>
@@ -31,12 +96,12 @@
                         <input type="text" id="lastName" required>
                     </div>
                 </div>
-                
+
                 <div class="form-group">
                     <label>อีเมล:</label>
                     <input type="email" id="email" required>
                 </div>
-                
+
                 <div class="form-row">
                     <div class="form-group">
                         <label>อายุ:</label>
@@ -54,19 +119,19 @@
                         </select>
                     </div>
                 </div>
-                
+
                 <div class="form-group">
                     <label>GPA:</label>
                     <input type="number" id="gpa" min="0" max="4" step="0.01" required>
                 </div>
-                
+
                 <div class="form-actions">
                     <button type="submit" class="btn btn-primary">บันทึก</button>
                     <button type="button" class="btn btn-secondary" onclick="resetForm()">ยกเลิก</button>
                 </div>
             </form>
         </div>
-        
+
         <!-- ตารางแสดงข้อมูล -->
         <div class="table-section">
             <div class="table-header">
@@ -82,7 +147,7 @@
                     </select>
                 </div>
             </div>
-            
+
             <table id="studentsTable">
                 <thead>
                     <tr>
@@ -96,12 +161,26 @@
                     </tr>
                 </thead>
                 <tbody id="studentsTableBody">
-                    <!-- ข้อมูลจะแสดงที่นี่ -->
+                    <tr><td colspan="7" style="text-align:center;padding:30px;color:#aaa;">กำลังโหลดข้อมูล...</td></tr>
                 </tbody>
             </table>
         </div>
     </div>
-    
+
+    <script>
+        // ตรวจสอบสิทธิ์ admin
+        (function checkAuth() {
+            const role = sessionStorage.getItem('role');
+            if (!role) { window.location.href = 'login.html'; return; }
+            if (role !== 'admin') { window.location.href = 'user.html'; return; }
+            document.getElementById('displayName').textContent = sessionStorage.getItem('username') || 'Admin';
+        })();
+
+        function logout() {
+            sessionStorage.clear();
+            window.location.href = 'login.html';
+        }
+    </script>
     <script src="app.js"></script>
 </body>
 </html>

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เข้าสู่ระบบ - ระบบจัดการข้อมูลนักเรียน</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .login-wrapper {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-card {
+            background: white;
+            border-radius: 20px;
+            padding: 50px 45px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .login-logo {
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 3em;
+        }
+
+        .login-title {
+            text-align: center;
+            color: #667eea;
+            font-size: 1.5em;
+            font-weight: 700;
+            margin-bottom: 6px;
+            border-bottom: none;
+        }
+
+        .login-subtitle {
+            text-align: center;
+            color: #999;
+            font-size: 0.9em;
+            margin-bottom: 35px;
+        }
+
+        .login-card .form-group {
+            margin-bottom: 20px;
+        }
+
+        .login-card label {
+            font-size: 0.9em;
+            color: #555;
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 14px;
+            font-size: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .error-msg {
+            background: #ffe0e0;
+            color: #c0392b;
+            border-radius: 8px;
+            padding: 12px 15px;
+            font-size: 0.9em;
+            margin-top: 15px;
+            display: none;
+            text-align: center;
+        }
+
+        .role-hint {
+            margin-top: 25px;
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+        }
+
+        .role-hint p {
+            font-size: 0.8em;
+            color: #aaa;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .hint-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .hint-box {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 10px 12px;
+            font-size: 0.78em;
+            color: #666;
+        }
+
+        .hint-box strong {
+            display: block;
+            color: #667eea;
+            margin-bottom: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-wrapper">
+        <div class="login-card">
+            <div class="login-logo">🎓</div>
+            <h2 class="login-title">ระบบจัดการข้อมูลนักเรียน</h2>
+            <p class="login-subtitle">กรุณาเข้าสู่ระบบเพื่อดำเนินการต่อ</p>
+
+            <form id="loginForm">
+                <div class="form-group">
+                    <label>ชื่อผู้ใช้</label>
+                    <input type="text" id="username" placeholder="กรอกชื่อผู้ใช้" autocomplete="username">
+                </div>
+                <div class="form-group">
+                    <label>รหัสผ่าน</label>
+                    <input type="password" id="password" placeholder="กรอกรหัสผ่าน" autocomplete="current-password">
+                </div>
+                <button type="submit" class="btn-login">เข้าสู่ระบบ</button>
+                <div class="error-msg" id="errorMsg">ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง</div>
+            </form>
+
+            <div class="role-hint">
+                <p>บัญชีทดสอบ</p>
+                <div class="hint-grid">
+                    <div class="hint-box">
+                        <strong>👤 User</strong>
+                        user / user1234
+                    </div>
+                    <div class="hint-box">
+                        <strong>🔑 Admin</strong>
+                        admin / admin1234
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const ACCOUNTS = {
+            user:  { password: 'user1234',  role: 'user',  redirect: 'user.html' },
+            admin: { password: 'admin1234', role: 'admin', redirect: 'index.html' }
+        };
+
+        document.getElementById('loginForm').addEventListener('submit', function (e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            const errorMsg = document.getElementById('errorMsg');
+
+            const account = ACCOUNTS[username];
+            if (account && account.password === password) {
+                sessionStorage.setItem('role', account.role);
+                sessionStorage.setItem('username', username);
+                window.location.href = account.redirect;
+            } else {
+                errorMsg.style.display = 'block';
+                document.getElementById('password').value = '';
+            }
+        });
+
+        // ถ้า login แล้วให้ redirect ไปหน้าที่เหมาะสม
+        const role = sessionStorage.getItem('role');
+        if (role === 'admin') window.location.href = 'index.html';
+        if (role === 'user')  window.location.href = 'user.html';
+    </script>
+</body>
+</html>
